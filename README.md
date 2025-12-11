@@ -19,7 +19,7 @@ A powerful, lightweight command-line interface for Slack built with pure bash. N
 ### Using Homebrew (Recommended)
 
 ```bash
-brew tap nitaiaharoni/slack-cli
+brew tap nitaiaharoni1/slack-cli
 brew install slack-cli
 ```
 
@@ -27,7 +27,7 @@ brew install slack-cli
 
 1. Download the script:
 ```bash
-curl -o slack-cli.sh https://raw.githubusercontent.com/nitaiaharoni/slack-cli/main/slack-cli.sh
+curl -o slack-cli.sh https://raw.githubusercontent.com/nitaiaharoni1/slack-cli/main/slack-cli.sh
 ```
 
 2. Make it executable:
