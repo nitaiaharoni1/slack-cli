@@ -97,6 +97,125 @@ else:
 "
             ;;
         
+        # Setup/Initialize
+        init|setup|configure)
+            echo "🔧 Slack CLI Setup"
+            echo ""
+            
+            # Check if token already exists
+            if [ -f ~/.slack_token ]; then
+                echo "✅ Token file found at ~/.slack_token"
+                echo ""
+                read -p "Do you want to update it? (y/N): " update_token
+                if [ "$update_token" != "y" ] && [ "$update_token" != "Y" ]; then
+                    echo "Keeping existing token."
+                    echo ""
+                    echo "Testing current token..."
+                    export SLACK_TOKEN=$(cat ~/.slack_token)
+                    curl -s -X GET "https://slack.com/api/auth.test" \
+                        -H "Authorization: Bearer $SLACK_TOKEN" \
+                        2>/dev/null | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+if data.get('ok'):
+    print(f\"✅ Token is valid!\")
+    print(f\"   User: {data.get('user')}\")
+    print(f\"   Team: {data.get('team')}\")
+else:
+    print(f\"❌ Token is invalid: {data.get('error', 'Unknown error')}\")
+    sys.exit(1)
+" && echo "" && echo "Setup complete! You can now use: slack help"
+                    return 0
+                fi
+            fi
+            
+            echo "To use Slack CLI, you need a User OAuth Token."
+            echo ""
+            echo "📋 Steps to get your token:"
+            echo ""
+            echo "1. Go to: https://api.slack.com/apps"
+            echo "2. Create a new app or select an existing one"
+            echo "3. Go to 'OAuth & Permissions'"
+            echo "4. Under 'User Token Scopes', add these scopes:"
+            echo "   - channels:read"
+            echo "   - channels:history"
+            echo "   - channels:write"
+            echo "   - chat:write"
+            echo "   - im:read"
+            echo "   - im:write"
+            echo "   - users:read"
+            echo "   - users:read.email"
+            echo "   - reactions:write"
+            echo "   - reactions:read"
+            echo "   - files:read"
+            echo "   - files:write"
+            echo "   - search:read"
+            echo "   - bookmarks:read"
+            echo "5. Install the app to your workspace"
+            echo "6. Copy your 'User OAuth Token' (starts with xoxp-)"
+            echo ""
+            read -p "Paste your token here: " user_token
+            
+            if [ -z "$user_token" ]; then
+                echo "❌ No token provided. Setup cancelled."
+                return 1
+            fi
+            
+            # Validate token format
+            if [[ ! "$user_token" =~ ^xoxp- ]]; then
+                echo "❌ Invalid token format. Token should start with 'xoxp-'"
+                echo "   Make sure you're using a User OAuth Token, not a Bot Token."
+                return 1
+            fi
+            
+            # Store token securely
+            echo "$user_token" > ~/.slack_token
+            chmod 600 ~/.slack_token
+            echo ""
+            echo "✅ Token stored securely at ~/.slack_token"
+            
+            # Test the token
+            echo ""
+            echo "🧪 Testing token..."
+            export SLACK_TOKEN="$user_token"
+            curl -s -X GET "https://slack.com/api/auth.test" \
+                -H "Authorization: Bearer $SLACK_TOKEN" \
+                2>/dev/null | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+if data.get('ok'):
+    print(f\"✅ Token is valid!\")
+    print(f\"   User: {data.get('user')}\")
+    print(f\"   Team: {data.get('team')}\")
+    print(f\"   URL: {data.get('url')}\")
+else:
+    error = data.get('error', 'Unknown error')
+    print(f\"❌ Token validation failed: {error}\")
+    if 'invalid_auth' in error.lower():
+        print(f\"💡 Make sure you copied the full token correctly\")
+    elif 'missing_scope' in error.lower():
+        print(f\"💡 Make sure you added all required scopes and reinstalled the app\")
+    sys.exit(1)
+"
+            
+            if [ $? -eq 0 ]; then
+                echo ""
+                echo "🎉 Setup complete!"
+                echo ""
+                echo "Next steps:"
+                echo "  1. Make sure your shell config (~/.zshrc or ~/.bashrc) includes:"
+                echo "     source \$(brew --prefix)/bin/slack"
+                echo ""
+                echo "  2. Reload your shell: source ~/.zshrc"
+                echo ""
+                echo "  3. Try: slack help"
+            else
+                echo ""
+                echo "⚠️  Token stored but validation failed. Please check the error above."
+                return 1
+            fi
+            ;;
+        
         # List channels
         channels|list|ls)
             _check_token || return 1
@@ -579,6 +698,7 @@ USAGE:
   slack <action> [arguments]
 
 ACTIONS:
+  init, setup, configure     Initial setup and token configuration
   dm, direct, message        Send direct message
   dms, directs               List direct messages
   read-dm, dm-read           Read direct messages
@@ -606,6 +726,8 @@ ACTIONS:
   help                      Show this help message
 
 EXAMPLES:
+  slack init                 Run initial setup
+  slack setup                Configure your Slack token
   slack dm user@example.com 'Hello!'
   slack dm me 'Note to self'
   slack dms
