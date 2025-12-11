@@ -106,7 +106,8 @@ else:
             if [ -f ~/.slack_token ]; then
                 echo "✅ Token file found at ~/.slack_token"
                 echo ""
-                read -p "Do you want to update it? (y/N): " update_token
+                echo -n "Do you want to update it? (y/N): "
+                read update_token
                 if [ "$update_token" != "y" ] && [ "$update_token" != "Y" ]; then
                     echo "Keeping existing token."
                     echo ""
@@ -154,7 +155,8 @@ else:
             echo "5. Install the app to your workspace"
             echo "6. Copy your 'User OAuth Token' (starts with xoxp-)"
             echo ""
-            read -p "Paste your token here: " user_token
+            echo -n "Paste your token here: "
+            read user_token
             
             if [ -z "$user_token" ]; then
                 echo "❌ No token provided. Setup cancelled."
