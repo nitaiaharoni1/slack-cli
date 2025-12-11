@@ -3,17 +3,20 @@
 # Version: 1.0.0
 # Usage: slack-chat <action> [arguments]
 
-# Load token from secure file or environment variable
-if [ -z "$SLACK_TOKEN" ]; then
-    if [ -f ~/.slack_token ]; then
-        export SLACK_TOKEN=$(cat ~/.slack_token)
-    elif [ -f ~/.slack/credentials.json ]; then
-        export SLACK_TOKEN=$(python3 -c "import json; print(json.load(open('$HOME/.slack/credentials.json')).get('token', ''))" 2>/dev/null || echo "")
+# Load token from secure file or environment variable (lazy loading)
+_load_token() {
+    if [ -z "$SLACK_TOKEN" ]; then
+        if [ -f ~/.slack_token ]; then
+            export SLACK_TOKEN=$(cat ~/.slack_token)
+        elif [ -f ~/.slack/credentials.json ]; then
+            export SLACK_TOKEN=$(python3 -c "import json; print(json.load(open('$HOME/.slack/credentials.json')).get('token', ''))" 2>/dev/null || echo "")
+        fi
     fi
-fi
+}
 
-# Check if token is set
+# Check if token is set (loads token if needed)
 _check_token() {
+    _load_token
     if [ -z "$SLACK_TOKEN" ]; then
         echo "❌ Error: SLACK_TOKEN not set"
         echo "Store it in: ~/.slack_token"
@@ -23,6 +26,7 @@ _check_token() {
 
 # Get channel ID by name or ID
 _get_channel_id() {
+    _load_token
     local channel_input="$1"
     
     # If it's already a channel ID (starts with C), return it directly
@@ -1484,5 +1488,10 @@ else:
     esac
 }
 
-# Export the function
-export -f slack-chat
+# If script is executed (not sourced), run the function
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    slack-chat "$@"
+else
+    # If sourced, export the function
+    export -f slack-chat
+fi
