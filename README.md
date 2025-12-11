@@ -69,6 +69,20 @@ source ~/.zshrc  # or source ~/.bashrc
 
 ## Setup
 
+### Quick Setup (Recommended)
+
+After installation, run:
+```bash
+slack init
+```
+
+This will guide you through:
+- Getting a Slack token
+- Storing it securely
+- Testing the connection
+
+### Manual Setup
+
 ### 1. Get a Slack Token
 
 1. Go to [Slack API Apps](https://api.slack.com/apps)
