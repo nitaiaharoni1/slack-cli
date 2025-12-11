@@ -31,9 +31,12 @@ brew install slack-cli
 
 That's it! Homebrew automatically handles the `homebrew-` prefix.
 
+**Note:** This installs as `slack-bash` to coexist with the official Slack CLI.
+Use `slack-bash` instead of `slack` to avoid conflicts.
+
 After installation, add to your shell config (`~/.zshrc` or `~/.bashrc`):
 ```bash
-source $(brew --prefix)/bin/slack
+source $(brew --prefix)/bin/slack-bash
 ```
 
 Then reload your shell: `source ~/.zshrc`
