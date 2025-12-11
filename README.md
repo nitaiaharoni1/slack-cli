@@ -31,12 +31,12 @@ brew install slack-cli
 
 That's it! Homebrew automatically handles the `homebrew-` prefix.
 
-**Note:** This installs as `slack-bash` to coexist with the official Slack CLI.
-Use `slack-bash` instead of `slack` to avoid conflicts.
+**Note:** This installs as `slackchat` to coexist with the official Slack CLI.
+Use `slackchat` instead of `slack` to avoid conflicts.
 
 After installation, add to your shell config (`~/.zshrc` or `~/.bashrc`):
 ```bash
-source $(brew --prefix)/bin/slack-bash
+source $(brew --prefix)/bin/slackchat
 ```
 
 Then reload your shell: `source ~/.zshrc`
@@ -76,7 +76,7 @@ source ~/.zshrc  # or source ~/.bashrc
 
 After installation, run:
 ```bash
-slack init
+slackchat init
 ```
 
 This will guide you through:
@@ -124,66 +124,66 @@ chmod 600 ~/.slack_token
 
 ```bash
 # Show your user info
-slack me
+slackchat me
 
 # List all channels
-slack channels
+slackchat channels
 
 # Send a message
-slack send '#general' 'Hello from CLI!'
+slackchat send '#general' 'Hello from CLI!'
 
 # Read messages from a channel
-slack read '#general' 20
+slackchat read '#general' 20
 
 # Send a direct message
-slack dm 'user@example.com' 'Hello!'
+slackchat dm 'user@example.com' 'Hello!'
 
 # Schedule a message
-slack schedule '#general' 'in 1 hour' 'Reminder message'
+slackchat schedule '#general' 'in 1 hour' 'Reminder message'
 
 # Add a reaction
-slack react '#general' last ':thumbsup:'
+slackchat react '#general' last ':thumbsup:'
 
 # Search messages
-slack search 'deployment'
+slackchat search 'deployment'
 ```
 
 ### Channel Management
 
 ```bash
 # Create a channel
-slack create-channel 'dev-team'
+slackchat create-channel 'dev-team'
 
 # Archive a channel
-slack archive '#old-channel'
+slackchat archive '#old-channel'
 
 # Invite a user
-slack invite '#general' 'user@example.com'
+slackchat invite '#general' 'user@example.com'
 
 # Leave a channel
-slack leave '#channel'
+slackchat leave '#channel'
 ```
 
 ### Advanced Features
 
 ```bash
 # Use channel IDs directly
-slack send 'C1234567890' 'Message'
+slackchat send 'C1234567890' 'Message'
 
 # Schedule DMs
-slack schedule 'user@example.com' 'in 1 hour' 'Scheduled DM'
+slackchat schedule 'user@example.com' 'in 1 hour' 'Scheduled DM'
 
 # Remove reactions
-slack unreact '#general' last ':thumbsup:'
+slackchat unreact '#general' last ':thumbsup:'
 
 # Delete scheduled messages
-slack delete-scheduled '#general' 'Q1234567890'
+slackchat delete-scheduled '#general' 'Q1234567890'
 
 # List files
-slack files '#general'
+slackchat files '#general'
 
 # Delete files
-slack delete-file 'F1234567890'
+slackchat delete-file 'F1234567890'
 ```
 
 ## Examples
@@ -191,25 +191,25 @@ slack delete-file 'F1234567890'
 ### Quick Note to Self
 
 ```bash
-slack dm me 'Remember to deploy at 3pm'
+slackchat dm me 'Remember to deploy at 3pm'
 ```
 
 ### Schedule a Standup Reminder
 
 ```bash
-slack schedule '#team-standup' 'tomorrow 9:00' 'Daily standup starts in 5 minutes!'
+slackchat schedule '#team-standup' 'tomorrow 9:00' 'Daily standup starts in 5 minutes!'
 ```
 
 ### React to Last Message
 
 ```bash
-slack react '#general' last ':white_check_mark:'
+slackchat react '#general' last ':white_check_mark:'
 ```
 
 ### Search for Recent Mentions
 
 ```bash
-slack search '@yourname'
+slackchat search '@yourname'
 ```
 
 ## Requirements
