@@ -6,7 +6,7 @@ class SlackCli < Formula
   desc "Powerful command-line interface for Slack built with pure bash"
   homepage "https://github.com/nitaiaharoni1/slack-cli"
   url "https://github.com/nitaiaharoni1/slack-cli/archive/refs/tags/v1.0.0.tar.gz"
-  sha256 "" # Will be calculated after creating release
+  sha256 "ee71d5c974ccdc72a8cb1808135476ea077d42af8e1253ee0dce459f051e779a"
   license "MIT"
   head "https://github.com/nitaiaharoni1/slack-cli.git", branch: "main"
 
