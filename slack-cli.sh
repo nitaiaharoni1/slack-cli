@@ -1,7 +1,7 @@
 #!/bin/bash
 # Slack CLI - Unified command interface
 # Version: 1.0.0
-# Usage: slackchat <action> [arguments]
+# Usage: slack-chat <action> [arguments]
 
 # Load token from secure file or environment variable
 if [ -z "$SLACK_TOKEN" ]; then
@@ -73,8 +73,8 @@ if data.get('ok'):
     return 1
 }
 
-# Main slackchat command
-slackchat() {
+# Main slack-chat command
+slack-chat() {
     local action="${1:-help}"
     shift || true
     
@@ -124,7 +124,7 @@ if data.get('ok'):
 else:
     print(f\"❌ Token is invalid: {data.get('error', 'Unknown error')}\")
     sys.exit(1)
-" && echo "" && echo "Setup complete! You can now use: slackchat help"
+" && echo "" && echo "Setup complete! You can now use: slack-chat help"
                     return 0
                 fi
             fi
@@ -208,7 +208,7 @@ else:
                 echo ""
                 echo "  2. Reload your shell: source ~/.zshrc"
                 echo ""
-                echo "  3. Try: slackchat help"
+                echo "  3. Try: slack-chat help"
             else
                 echo ""
                 echo "⚠️  Token stored but validation failed. Please check the error above."
@@ -245,9 +245,9 @@ else:
             local message="${*:2}"
             
             if [ -z "$channel" ] || [ -z "$message" ]; then
-                echo "Usage: slackchat send <channel> <message>"
-                echo "Example: slackchat send '#general' 'Hello from CLI!'"
-                echo "Example: slackchat send 'C1234567890' 'Hello!'  (channel ID)"
+                echo "Usage: slack-chat send <channel> <message>"
+                echo "Example: slack-chat send '#general' 'Hello from CLI!'"
+                echo "Example: slack-chat send 'C1234567890' 'Hello!'  (channel ID)"
                 return 1
             fi
             
@@ -289,7 +289,7 @@ else:
             local message="${*:3}"
             
             if [ -z "$target" ] || [ -z "$post_at" ] || [ -z "$message" ]; then
-                echo "Usage: slackchat schedule <channel-or-user> <time> <message>"
+                echo "Usage: slack-chat schedule <channel-or-user> <time> <message>"
                 echo ""
                 echo "Time formats:"
                 echo "  Unix timestamp: slack schedule '#general' 1733947200 'Hello!'"
@@ -455,9 +455,9 @@ else:
             local limit="${2:-10}"
             
             if [ -z "$channel" ]; then
-                echo "Usage: slackchat read <channel> [limit]"
-                echo "Example: slackchat read '#general' 20"
-                echo "Example: slackchat read general 20  (auto-detects #)"
+                echo "Usage: slack-chat read <channel> [limit]"
+                echo "Example: slack-chat read '#general' 20"
+                echo "Example: slack-chat read general 20  (auto-detects #)"
                 return 1
             fi
             
@@ -509,8 +509,8 @@ else:
             local query="${*}"
             
             if [ -z "$query" ]; then
-                echo "Usage: slackchat search <query>"
-                echo "Example: slackchat search 'deployment'"
+                echo "Usage: slack-chat search <query>"
+                echo "Example: slack-chat search 'deployment'"
                 return 1
             fi
             
@@ -545,7 +545,7 @@ else:
             local emoji="${3}"
             
             if [ -z "$channel" ] || [ -z "$timestamp" ] || [ -z "$emoji" ]; then
-                echo "Usage: slackchat react <channel> <timestamp|last|index> <emoji>"
+                echo "Usage: slack-chat react <channel> <timestamp|last|index> <emoji>"
                 echo "Examples:"
                 echo "  slack react '#general' '1234567890.123456' ':+1:'"
                 echo "  slack react '#general' last ':thumbsup:'"
@@ -616,8 +616,8 @@ else:
             local presence="${1:-auto}"
             
             if [ "$presence" != "auto" ] && [ "$presence" != "away" ]; then
-                echo "Usage: slackchat status [auto|away]"
-                echo "Example: slackchat status away"
+                echo "Usage: slack-chat status [auto|away]"
+                echo "Example: slack-chat status away"
                 return 1
             fi
             
@@ -664,8 +664,8 @@ else:
             local channel="${1}"
             
             if [ -z "$channel" ]; then
-                echo "Usage: slackchat channel <channel-name>"
-                echo "Example: slackchat channel '#general'"
+                echo "Usage: slack-chat channel <channel-name>"
+                echo "Example: slack-chat channel '#general'"
                 return 1
             fi
             
@@ -764,7 +764,7 @@ TOKEN:
   Token is automatically loaded from ~/.slack_token
   No need to export SLACK_TOKEN manually
 
-For more details: slackchat help <action>
+For more details: slack-chat help <action>
 EOF
             ;;
         
@@ -775,9 +775,9 @@ EOF
             local message="${*:2}"
             
             if [ -z "$user" ] || [ -z "$message" ]; then
-                echo "Usage: slackchat dm <user-email-or-id|me> <message>"
-                echo "Example: slackchat dm 'user@example.com' 'Hello!'"
-                echo "Example: slackchat dm me 'Note to self'"
+                echo "Usage: slack-chat dm <user-email-or-id|me> <message>"
+                echo "Example: slack-chat dm 'user@example.com' 'Hello!'"
+                echo "Example: slack-chat dm me 'Note to self'"
                 return 1
             fi
             
@@ -876,9 +876,9 @@ else:
             local limit="${2:-10}"
             
             if [ -z "$user" ]; then
-                echo "Usage: slackchat read-dm <user-email-or-id|me> [limit]"
-                echo "Example: slackchat read-dm 'user@example.com' 20"
-                echo "Example: slackchat read-dm me 20"
+                echo "Usage: slack-chat read-dm <user-email-or-id|me> [limit]"
+                echo "Example: slack-chat read-dm 'user@example.com' 20"
+                echo "Example: slack-chat read-dm me 20"
                 return 1
             fi
             
@@ -1040,8 +1040,8 @@ else:
             local channel="${1}"
             
             if [ -z "$channel" ]; then
-                echo "Usage: slackchat bookmarks <channel>"
-                echo "Example: slackchat bookmarks '#general'"
+                echo "Usage: slack-chat bookmarks <channel>"
+                echo "Example: slack-chat bookmarks '#general'"
                 return 1
             fi
             
@@ -1079,8 +1079,8 @@ else:
             local user="${1}"
             
             if [ -z "$user" ]; then
-                echo "Usage: slackchat user <user-email-or-id>"
-                echo "Example: slackchat user 'user@example.com'"
+                echo "Usage: slack-chat user <user-email-or-id>"
+                echo "Example: slack-chat user 'user@example.com'"
                 return 1
             fi
             
@@ -1118,9 +1118,9 @@ else:
             local is_private="${2:-false}"
             
             if [ -z "$channel_name" ]; then
-                echo "Usage: slackchat create-channel <name> [private]"
-                echo "Example: slackchat create-channel 'dev-team'"
-                echo "Example: slackchat create-channel 'secret-stuff' private"
+                echo "Usage: slack-chat create-channel <name> [private]"
+                echo "Example: slack-chat create-channel 'dev-team'"
+                echo "Example: slack-chat create-channel 'secret-stuff' private"
                 return 1
             fi
             
@@ -1159,8 +1159,8 @@ else:
             local user="${2}"
             
             if [ -z "$channel" ] || [ -z "$user" ]; then
-                echo "Usage: slackchat invite <channel> <user-email-or-id>"
-                echo "Example: slackchat invite '#general' 'user@example.com'"
+                echo "Usage: slack-chat invite <channel> <user-email-or-id>"
+                echo "Example: slack-chat invite '#general' 'user@example.com'"
                 return 1
             fi
             
@@ -1211,9 +1211,9 @@ else:
             local channel="${1}"
             
             if [ -z "$channel" ]; then
-                echo "Usage: slackchat archive <channel>"
-                echo "Example: slackchat archive '#general'"
-                echo "Example: slackchat archive general  (auto-detects #)"
+                echo "Usage: slack-chat archive <channel>"
+                echo "Example: slack-chat archive '#general'"
+                echo "Example: slack-chat archive general  (auto-detects #)"
                 echo ""
                 echo "Note: This archives the channel (hides it from channel list)"
                 echo "      Slack doesn't support permanent deletion via API"
@@ -1257,8 +1257,8 @@ else:
             local channel="${1}"
             
             if [ -z "$channel" ]; then
-                echo "Usage: slackchat unarchive <channel>"
-                echo "Example: slackchat unarchive '#general'"
+                echo "Usage: slack-chat unarchive <channel>"
+                echo "Example: slack-chat unarchive '#general'"
                 return 1
             fi
             
@@ -1295,8 +1295,8 @@ else:
             local scheduled_message_id="${2}"
             
             if [ -z "$channel" ] || [ -z "$scheduled_message_id" ]; then
-                echo "Usage: slackchat delete-scheduled <channel> <scheduled-message-id>"
-                echo "Example: slackchat delete-scheduled '#general' 'Q1234567890'"
+                echo "Usage: slack-chat delete-scheduled <channel> <scheduled-message-id>"
+                echo "Example: slack-chat delete-scheduled '#general' 'Q1234567890'"
                 echo ""
                 echo "To find scheduled message IDs, check the output when scheduling"
                 return 1
@@ -1336,7 +1336,7 @@ else:
             local emoji="${3}"
             
             if [ -z "$channel" ] || [ -z "$timestamp" ] || [ -z "$emoji" ]; then
-                echo "Usage: slackchat unreact <channel> <timestamp|last|index> <emoji>"
+                echo "Usage: slack-chat unreact <channel> <timestamp|last|index> <emoji>"
                 echo "Examples:"
                 echo "  slack unreact '#general' '1234567890.123456' ':+1:'"
                 echo "  slack unreact '#general' last ':thumbsup:'"
@@ -1407,8 +1407,8 @@ else:
             local file_id="${1}"
             
             if [ -z "$file_id" ]; then
-                echo "Usage: slackchat delete-file <file-id>"
-                echo "Example: slackchat delete-file 'F1234567890'"
+                echo "Usage: slack-chat delete-file <file-id>"
+                echo "Example: slack-chat delete-file 'F1234567890'"
                 echo ""
                 echo "To find file IDs, use: slack files"
                 return 1
@@ -1440,9 +1440,9 @@ else:
             local channel="${1}"
             
             if [ -z "$channel" ]; then
-                echo "Usage: slackchat leave <channel>"
-                echo "Example: slackchat leave '#general'"
-                echo "Example: slackchat leave general  (auto-detects #)"
+                echo "Usage: slack-chat leave <channel>"
+                echo "Example: slack-chat leave '#general'"
+                echo "Example: slack-chat leave general  (auto-detects #)"
                 return 1
             fi
             
@@ -1476,11 +1476,11 @@ else:
         
         *)
             echo "Unknown action: $action"
-            echo "Run 'slackchat help' for available commands"
+            echo "Run 'slack-chat help' for available commands"
             return 1
             ;;
     esac
 }
 
 # Export the function
-export -f slackchat
+export -f slack-chat
