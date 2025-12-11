@@ -26,10 +26,10 @@ curl -fsSL https://raw.githubusercontent.com/nitaiaharoni1/slack-cli/main/instal
 
 ```bash
 brew tap nitaiaharoni1/slack-cli
-brew install slack-cli
+brew install --formula nitaiaharoni1/slack-cli/slack-cli
 ```
 
-That's it! Homebrew automatically handles the `homebrew-` prefix.
+**Important:** Use `--formula` flag or the full formula path to avoid installing the official Slack CLI cask.
 
 **Note:** This installs as `slack-chat` to coexist with the official Slack CLI.
 Use `slack-chat` instead of `slack` to avoid conflicts.
