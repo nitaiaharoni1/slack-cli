@@ -8,8 +8,8 @@ echo "🚀 Installing Slack CLI..."
 # Install via Homebrew if available
 if command -v brew &> /dev/null; then
     echo "📦 Installing via Homebrew..."
-    brew tap nitaiaharoni1/slack-cli
-    brew install nitaiaharoni1/slack-cli/slack-chat
+    brew tap nitaiaharoni1/slack
+    brew install nitaiaharoni1/slack/cli
     
     echo ""
     echo "✅ Installation complete!"
