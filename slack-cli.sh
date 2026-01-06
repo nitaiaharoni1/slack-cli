@@ -1,6 +1,6 @@
 #!/bin/bash
 # Slack CLI - Unified command interface
-# Version: 1.0.0
+# Version: 1.5.0
 # Usage: slack-chat <action> [arguments]
 
 # Load token from secure file or environment variable (lazy loading)
@@ -729,6 +729,7 @@ ACTIONS:
   users, members            List workspace users
   channel, info             Get channel information
   delete-file, rmfile       Delete a file
+  contacts                  Manage local contacts (add, remove, list, find, groups)
   help                      Show this help message
 
 EXAMPLES:
@@ -765,6 +766,15 @@ EXAMPLES:
   slack leave '#channel'
   slack delete-scheduled '#general' 'Q1234567890'
   slack delete-file 'F1234567890'
+
+CONTACTS:
+  slack contacts list                  List all contacts
+  slack contacts list work             List contacts in 'work' group
+  slack contacts find 'john'           Search contacts
+  slack contacts add 'a@b.com' 'Name'  Add contact
+  slack contacts add-batch e1 e2 --names 'N1,N2' --groups 'work'
+  slack contacts remove 'a@b.com'      Remove contact
+  slack contacts groups                List contact groups
 
 TOKEN:
   Token is automatically loaded from ~/.slack_token
@@ -1438,6 +1448,464 @@ else:
         print(f\"💡 Make sure your token has 'files:write' scope\")
     sys.exit(1)
 "
+            ;;
+        
+        # Contacts management
+        contacts|contact)
+            local subaction="${1:-list}"
+            shift || true
+            
+            local CONTACTS_FILE="$HOME/.slack/contacts.json"
+            
+            # Ensure contacts file exists
+            _ensure_contacts_file() {
+                mkdir -p "$HOME/.slack"
+                if [ ! -f "$CONTACTS_FILE" ]; then
+                    echo '{"contacts": {}, "groups": []}' > "$CONTACTS_FILE"
+                    chmod 600 "$CONTACTS_FILE"
+                fi
+            }
+            
+            case "$subaction" in
+                list|ls)
+                    _ensure_contacts_file
+                    local group="${1}"
+                    python3 -c "
+import json
+import sys
+
+with open('$CONTACTS_FILE') as f:
+    data = json.load(f)
+
+contacts = data.get('contacts', {})
+group_filter = '$group' if '$group' else None
+
+filtered = []
+for email, contact in contacts.items():
+    if group_filter is None or group_filter in contact.get('groups', []):
+        filtered.append(contact)
+
+filtered.sort(key=lambda x: x.get('name', '').lower())
+
+if group_filter:
+    print(f\"Contacts in group '{group_filter}' ({len(filtered)}):\n\")
+else:
+    print(f\"All contacts ({len(filtered)}):\n\")
+
+for c in filtered:
+    groups = ', '.join(c.get('groups', [])) if c.get('groups') else ''
+    groups_str = f' [{groups}]' if groups else ''
+    desc = f' - {c.get(\"description\")}' if c.get('description') else ''
+    print(f\"  • {c['name']} <{c['email']}>{groups_str}{desc}\")
+
+if not filtered:
+    print('  (no contacts)')
+"
+                    ;;
+                
+                find|search)
+                    _ensure_contacts_file
+                    local query="${1}"
+                    
+                    if [ -z "$query" ]; then
+                        echo "Usage: slack contacts find <query>"
+                        return 1
+                    fi
+                    
+                    python3 -c "
+import json
+
+with open('$CONTACTS_FILE') as f:
+    data = json.load(f)
+
+query = '$query'.lower()
+results = []
+for email, contact in data.get('contacts', {}).items():
+    if (query in contact.get('name', '').lower() or 
+        query in contact.get('email', '').lower() or
+        query in contact.get('description', '').lower()):
+        results.append(contact)
+
+results.sort(key=lambda x: x.get('name', '').lower())
+print(f\"Found {len(results)} contact(s) matching '{query}':\n\")
+
+for c in results:
+    groups = ', '.join(c.get('groups', [])) if c.get('groups') else ''
+    groups_str = f' [{groups}]' if groups else ''
+    desc = f' - {c.get(\"description\")}' if c.get('description') else ''
+    print(f\"  • {c['name']} <{c['email']}>{groups_str}{desc}\")
+"
+                    ;;
+                
+                add)
+                    _ensure_contacts_file
+                    local email="${1}"
+                    local name="${2}"
+                    local description="${3:-}"
+                    local groups="${4:-}"
+                    
+                    if [ -z "$email" ] || [ -z "$name" ]; then
+                        echo "Usage: slack contacts add <email> <name> [description] [groups]"
+                        echo "Example: slack contacts add 'john@example.com' 'John Doe' 'Engineering lead' 'work,team'"
+                        return 1
+                    fi
+                    
+                    python3 -c "
+import json
+
+with open('$CONTACTS_FILE') as f:
+    data = json.load(f)
+
+email = '$email'
+if email in data.get('contacts', {}):
+    print(f'❌ Contact {email} already exists. Use update to modify.')
+    exit(1)
+
+groups_list = [g.strip() for g in '$groups'.split(',') if g.strip()]
+
+contact = {
+    'name': '$name',
+    'email': email,
+    'description': '$description',
+    'groups': sorted(groups_list)
+}
+
+data['contacts'][email] = contact
+
+# Update groups list
+for g in groups_list:
+    if g not in data['groups']:
+        data['groups'].append(g)
+data['groups'].sort()
+
+with open('$CONTACTS_FILE', 'w') as f:
+    json.dump(data, f, indent=2)
+
+groups_str = f' [{', '.join(groups_list)}]' if groups_list else ''
+print(f\"✅ Added contact: $name <{email}>{groups_str}\")
+"
+                    ;;
+                
+                add-batch)
+                    _ensure_contacts_file
+                    # Parse arguments
+                    local emails=()
+                    local names=""
+                    local groups=""
+                    
+                    while [[ $# -gt 0 ]]; do
+                        case "$1" in
+                            --names)
+                                names="$2"
+                                shift 2
+                                ;;
+                            --groups)
+                                groups="$2"
+                                shift 2
+                                ;;
+                            *)
+                                emails+=("$1")
+                                shift
+                                ;;
+                        esac
+                    done
+                    
+                    if [ ${#emails[@]} -eq 0 ]; then
+                        echo "Usage: slack contacts add-batch <email1> <email2> ... --names 'Name1,Name2,...' [--groups 'group1,group2']"
+                        return 1
+                    fi
+                    
+                    # Convert emails array to space-separated string for Python
+                    local emails_str="${emails[*]}"
+                    
+                    python3 -c "
+import json
+
+with open('$CONTACTS_FILE') as f:
+    data = json.load(f)
+
+emails = '$emails_str'.split()
+names = [n.strip() for n in '$names'.split(',')]
+groups_list = [g.strip() for g in '$groups'.split(',') if g.strip()]
+
+if len(names) != len(emails):
+    print(f'❌ Error: {len(names)} names for {len(emails)} emails')
+    exit(1)
+
+added = 0
+skipped = 0
+for email, name in zip(emails, names):
+    if email in data.get('contacts', {}):
+        skipped += 1
+        continue
+    
+    contact = {
+        'name': name,
+        'email': email,
+        'description': '',
+        'groups': sorted(groups_list)
+    }
+    data['contacts'][email] = contact
+    added += 1
+
+# Update groups list
+for g in groups_list:
+    if g not in data['groups']:
+        data['groups'].append(g)
+data['groups'].sort()
+
+with open('$CONTACTS_FILE', 'w') as f:
+    json.dump(data, f, indent=2)
+
+print(f'✅ Added {added} contacts' + (f' (skipped {skipped} existing)' if skipped else ''))
+"
+                    ;;
+                
+                remove|rm|delete)
+                    _ensure_contacts_file
+                    local email="${1}"
+                    
+                    if [ -z "$email" ]; then
+                        echo "Usage: slack contacts remove <email>"
+                        return 1
+                    fi
+                    
+                    python3 -c "
+import json
+
+with open('$CONTACTS_FILE') as f:
+    data = json.load(f)
+
+email = '$email'
+if email not in data.get('contacts', {}):
+    print(f'❌ Contact {email} not found')
+    exit(1)
+
+name = data['contacts'][email].get('name', email)
+del data['contacts'][email]
+
+# Clean up groups
+current_groups = set()
+for e, c in data['contacts'].items():
+    current_groups.update(c.get('groups', []))
+data['groups'] = sorted(list(current_groups))
+
+with open('$CONTACTS_FILE', 'w') as f:
+    json.dump(data, f, indent=2)
+
+print(f'✅ Removed contact: {name} <{email}>')
+"
+                    ;;
+                
+                remove-batch)
+                    _ensure_contacts_file
+                    local emails=("$@")
+                    
+                    if [ ${#emails[@]} -eq 0 ]; then
+                        echo "Usage: slack contacts remove-batch <email1> <email2> ..."
+                        return 1
+                    fi
+                    
+                    local emails_str="${emails[*]}"
+                    
+                    python3 -c "
+import json
+
+with open('$CONTACTS_FILE') as f:
+    data = json.load(f)
+
+emails = '$emails_str'.split()
+removed = 0
+
+for email in emails:
+    if email in data.get('contacts', {}):
+        del data['contacts'][email]
+        removed += 1
+
+# Clean up groups
+current_groups = set()
+for e, c in data['contacts'].items():
+    current_groups.update(c.get('groups', []))
+data['groups'] = sorted(list(current_groups))
+
+with open('$CONTACTS_FILE', 'w') as f:
+    json.dump(data, f, indent=2)
+
+print(f'✅ Removed {removed} contacts')
+"
+                    ;;
+                
+                update)
+                    _ensure_contacts_file
+                    local email="${1}"
+                    shift || true
+                    local name=""
+                    local description=""
+                    local groups=""
+                    
+                    while [[ $# -gt 0 ]]; do
+                        case "$1" in
+                            --name)
+                                name="$2"
+                                shift 2
+                                ;;
+                            --description)
+                                description="$2"
+                                shift 2
+                                ;;
+                            --groups)
+                                groups="$2"
+                                shift 2
+                                ;;
+                            *)
+                                shift
+                                ;;
+                        esac
+                    done
+                    
+                    if [ -z "$email" ]; then
+                        echo "Usage: slack contacts update <email> [--name 'New Name'] [--description 'Desc'] [--groups 'g1,g2']"
+                        return 1
+                    fi
+                    
+                    python3 -c "
+import json
+
+with open('$CONTACTS_FILE') as f:
+    data = json.load(f)
+
+email = '$email'
+if email not in data.get('contacts', {}):
+    print(f'❌ Contact {email} not found')
+    exit(1)
+
+contact = data['contacts'][email]
+if '$name':
+    contact['name'] = '$name'
+if '$description':
+    contact['description'] = '$description'
+if '$groups':
+    contact['groups'] = sorted([g.strip() for g in '$groups'.split(',') if g.strip()])
+
+# Update groups list
+current_groups = set()
+for e, c in data['contacts'].items():
+    current_groups.update(c.get('groups', []))
+data['groups'] = sorted(list(current_groups))
+
+with open('$CONTACTS_FILE', 'w') as f:
+    json.dump(data, f, indent=2)
+
+print(f\"✅ Updated contact: {contact['name']} <{email}>\")
+"
+                    ;;
+                
+                groups)
+                    _ensure_contacts_file
+                    python3 -c "
+import json
+
+with open('$CONTACTS_FILE') as f:
+    data = json.load(f)
+
+groups = data.get('groups', [])
+print(f'Contact groups ({len(groups)}):\n')
+
+for g in groups:
+    count = sum(1 for c in data['contacts'].values() if g in c.get('groups', []))
+    print(f'  • {g} ({count} contacts)')
+
+if not groups:
+    print('  (no groups)')
+"
+                    ;;
+                
+                group-add)
+                    _ensure_contacts_file
+                    local group_name="${1}"
+                    
+                    if [ -z "$group_name" ]; then
+                        echo "Usage: slack contacts group-add <group-name>"
+                        return 1
+                    fi
+                    
+                    python3 -c "
+import json
+
+with open('$CONTACTS_FILE') as f:
+    data = json.load(f)
+
+group = '$group_name'
+if group in data.get('groups', []):
+    print(f'ℹ️ Group \"{group}\" already exists')
+    exit(0)
+
+data['groups'].append(group)
+data['groups'].sort()
+
+with open('$CONTACTS_FILE', 'w') as f:
+    json.dump(data, f, indent=2)
+
+print(f'✅ Added group: {group}')
+"
+                    ;;
+                
+                group-remove)
+                    _ensure_contacts_file
+                    local group_name="${1}"
+                    
+                    if [ -z "$group_name" ]; then
+                        echo "Usage: slack contacts group-remove <group-name>"
+                        return 1
+                    fi
+                    
+                    python3 -c "
+import json
+
+with open('$CONTACTS_FILE') as f:
+    data = json.load(f)
+
+group = '$group_name'
+if group not in data.get('groups', []):
+    print(f'❌ Group \"{group}\" not found')
+    exit(1)
+
+data['groups'].remove(group)
+
+# Remove group from all contacts
+for email, contact in data['contacts'].items():
+    if group in contact.get('groups', []):
+        contact['groups'].remove(group)
+
+with open('$CONTACTS_FILE', 'w') as f:
+    json.dump(data, f, indent=2)
+
+print(f'✅ Removed group: {group}')
+"
+                    ;;
+                
+                *)
+                    echo "Usage: slack contacts <action> [arguments]"
+                    echo ""
+                    echo "Actions:"
+                    echo "  list [group]              List all contacts (optionally filter by group)"
+                    echo "  find <query>              Search contacts by name, email, or description"
+                    echo "  add <email> <name> [desc] [groups]  Add a new contact"
+                    echo "  add-batch <emails...> --names 'n1,n2' [--groups 'g1,g2']  Add multiple contacts"
+                    echo "  remove <email>            Remove a contact"
+                    echo "  remove-batch <emails...>  Remove multiple contacts"
+                    echo "  update <email> [options]  Update contact (--name, --description, --groups)"
+                    echo "  groups                    List all contact groups"
+                    echo "  group-add <name>          Add a new group"
+                    echo "  group-remove <name>       Remove a group"
+                    echo ""
+                    echo "Examples:"
+                    echo "  slack contacts add 'john@example.com' 'John Doe' 'Team lead' 'work,team'"
+                    echo "  slack contacts list work"
+                    echo "  slack contacts find 'john'"
+                    echo "  slack contacts update 'john@example.com' --name 'John Smith'"
+                    ;;
+            esac
             ;;
         
         # Leave channel
